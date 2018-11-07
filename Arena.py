@@ -2,8 +2,9 @@ import numpy as np
 from tqdm import tqdm
 import time
 import math
-import time
-class Arena():
+
+
+class Arena:
     """
     An Arena class where any 2 agents can be pit against each other.
     """

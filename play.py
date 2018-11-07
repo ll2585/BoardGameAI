@@ -10,6 +10,7 @@ from tqdm import tqdm
 num_games = 100
 x = None
 y = None
+write_data = False
 wins = {
 
 }
@@ -42,24 +43,23 @@ for i in tqdm(range(num_games)):
         y = np.concatenate((y, game.get_full_game_history_for_neural_net()[1]), axis=0)
 print(wins)
 
-hdf5_file = tables.openFile('../data/data.hdf5', 'w')
-filters = tables.Filters(complevel=5, complib='blosc')
-x_storage = hdf5_file.createEArray(hdf5_file.root, 'x',
-                                      tables.Atom.from_dtype(x.dtype),
-                                      shape=(0, x.shape[-1]),
-                                      filters=filters,
-                                      expectedrows=len(x))
-y_storage = hdf5_file.createEArray(hdf5_file.root, 'y',
-                                          tables.Atom.from_dtype(y.dtype),
-                                          shape=(0,),
-                                          filters=filters,
-                                          expectedrows=len(y))
-for n, (d, c) in enumerate(zip(x, y)):
-    x_storage.append(x[n][None])
-    y_storage.append(y[n][None])
-hdf5_file.close()
+if write_data:
 
-#np.save('../data/x.npy', x)
-#np.save('../data/y.npy', y)
+    hdf5_file = tables.openFile('../data/data.hdf5', 'w')
+    filters = tables.Filters(complevel=5, complib='blosc')
+    x_storage = hdf5_file.createEArray(hdf5_file.root, 'x',
+                                          tables.Atom.from_dtype(x.dtype),
+                                          shape=(0, x.shape[-1]),
+                                          filters=filters,
+                                          expectedrows=len(x))
+    y_storage = hdf5_file.createEArray(hdf5_file.root, 'y',
+                                              tables.Atom.from_dtype(y.dtype),
+                                              shape=(0,),
+                                              filters=filters,
+                                              expectedrows=len(y))
+    for n, (d, c) in enumerate(zip(x, y)):
+        x_storage.append(x[n][None])
+        y_storage.append(y[n][None])
+    hdf5_file.close()
 
 

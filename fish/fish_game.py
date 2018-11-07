@@ -78,9 +78,13 @@ class FishGame:
             cur_player.penguin_moved(start=action.start, end=action.end)
 
             next_player = self.get_next_player(player_id)
-
             if next_player.get_penguins() == [-1, -1, -1, -1]:
                 next_player = cur_player
+            while self.no_penguin_moves(next_player):
+                self.remove_penguins(next_player)
+                next_player = cur_player
+                if self.is_over():
+                    break
         elif action.type == "place":
             self.player_who_moved = cur_player.get_player_id()
             hex = self.board.pieces[action.start]
@@ -92,6 +96,22 @@ class FishGame:
         self.current_player = next_player
         if save_history:
             self.game_history.append(self.get_state().serialize())
+
+    def no_penguin_moves(self, player):
+        next_player_penguin_moves = []
+        for penguin in player.penguins:
+            next_player_penguin_moves += self.board.get_legal_moves(penguin, player)
+
+        return len(next_player_penguin_moves) == 0
+
+    def remove_penguins(self, player):
+        for p in player.penguins:
+            penguin_at_hex = self.board.pieces[p]
+            penguin_at_hex.move_penguin_away()
+            player.tiles_collected += 1
+            player.score += penguin_at_hex.value
+            penguin_at_hex.empty()
+            player.penguins = [-1, -1, -1, -1]
 
     def get_full_game_history_for_neural_net(self):
         #0 is player 1, 1 is player 2
@@ -191,9 +211,8 @@ class FishGame:
 def display(game):
     board = game.get_board()
     players = game.get_players()
-    penguins = []
-    for p in players:
-        penguins.extend(p.get_penguins())
+    p1_penguins = players[0].get_penguins()
+    p2_penguins = players[1].get_penguins()
     rows = [' ', '',
             ' ', '',
             ' ', '',
@@ -205,8 +224,10 @@ def display(game):
                 value = board.pieces[i].value
                 if value == -1:
                     value = 0
-                if i in penguins:
+                if i in p1_penguins:
                     value = "P"
+                elif i in p2_penguins:
+                    value = "Q"
                 rows[j] += str(value) + " "
                 break
     print ('\n'.join(rows))

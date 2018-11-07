@@ -9,10 +9,10 @@ from pathlib import Path
 from tqdm import tqdm
 from ai.ai import AI
 
-max_iters = 5
-num_games = 3
-win_threshold = 2
-last_model = 4
+max_iters = 1
+num_games = 20
+win_threshold = 9
+last_model = 0
 best_model = None
 random_player_1 = True
 
@@ -54,7 +54,7 @@ for iters in tqdm(range(max_iters)):
         if winner not in wins:
             wins[winner] = 0
         wins[winner] += 1
-        # print("winner: {0}".format(winner))
+        print("winner: {0}".format(winner))
         if x is None:
             x = game.get_full_game_history_for_neural_net()[0]
             y = game.get_full_game_history_for_neural_net()[1]

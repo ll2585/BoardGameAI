@@ -8,9 +8,13 @@ x = extendable_hdf5_file.root.x[:]
 y = extendable_hdf5_file.root.y[:]
 extendable_hdf5_file.close()
 
-print(x, y)
+latest_version = 1
+
 ai = AI()
 ai.load_data(x,y)
-ai.create_model()
+if latest_version is None:
+    ai.create_model()
+else:
+    ai.load_model('model', index=latest_version)
 ai.train_model()
-ai.save_model('model', index=0)
+ai.save_model('model', index=latest_version+1)

@@ -71,11 +71,12 @@ class FishBoard():
         moves = []
         if fish_index == -1:
             return moves
-        for direction in ["left", "right", "top_left", "bottom_right", "top_right", "top_left"]:
+        for direction in ["left", "right", "top_left", "bottom_right", "top_right", "bottom_left"]:
             moves += self.get_moves_direction(fish_index, direction, player)
         if len(moves) == 0:
-            # penguin cant move - can kill itself
-            moves.append(FishMove(fish_index, fish_index, player=player))
+            # penguin cant move - can kill itself - JK
+            pass
+            #moves.append(FishMove(fish_index, fish_index, player=player))
         return moves
 
     def get_moves_direction(self, start, direction, player):
@@ -103,10 +104,10 @@ class FishBoard():
                 z += 1
             elif direction == 'top_right':
                 z -= 1
-                x -= 1
-            elif direction == 'top_left':
-                z += 1
                 x += 1
+            elif direction == 'bottom_left':
+                z += 1
+                x -= 1
             else:
                 raise Exception("WRONG DIRECTION")
             index = '{x}-{y}-{z}'.format(x=x, y=y, z=z)
