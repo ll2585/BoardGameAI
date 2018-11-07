@@ -9,12 +9,12 @@ from pathlib import Path
 from tqdm import tqdm
 from ai.ai import AI
 
-max_iters = 1
-num_games = 20
-win_threshold = 9
-last_model = 0
-best_model = None
-random_player_1 = True
+max_iters = 10
+num_games = 10
+win_threshold = 6
+last_model = 3
+best_model = 1
+random_player_1 = False
 
 for iters in tqdm(range(max_iters)):
     num_games = num_games
@@ -31,17 +31,16 @@ for iters in tqdm(range(max_iters)):
     for i in tqdm(range(num_games)):
         game = FishGame()
         if random_player_1:
-            player_1 = RandomPlayer(0,"BOB",game)
+            player_1 = RandomPlayer(0,"Random Bob",game)
         else:
-            player_1 = NaiveAIPlayer(best_model+1, "CHARLA", game, main_name='model', index=best_model)
-        player_2 = NaiveAIPlayer(iters+last_model+1,"CHARLA",game,main_name='model', index=last_model+iters)
+            player_1 = NaiveAIPlayer(best_model+1, "Model {0}".format(best_model), game, main_name='model', index=best_model)
+        player_2 = NaiveAIPlayer(iters+last_model+1,"Model {0}".format(last_model+iters),game,main_name='model', index=last_model+iters)
         game.set_up()
         players = [player_1, player_2]
         for player in players:
             player.reset()
             game.add_player(player)
         game.start()
-        print("START GAME")
 
         while not game.is_over():
             cur_player = game.get_current_player()
@@ -64,7 +63,7 @@ for iters in tqdm(range(max_iters)):
 
     print(wins)
     hdf5_path = "./data/data.hdf5"
-    extendable_hdf5_file = tables.openFile(hdf5_path, mode='a')
+    extendable_hdf5_file = tables.open_file(hdf5_path, mode='a')
     extendable_hdf5_x = extendable_hdf5_file.root.x
     extendable_hdf5_y = extendable_hdf5_file.root.y
     for n, (d, c) in enumerate(zip(x, y)):
@@ -83,7 +82,7 @@ for iters in tqdm(range(max_iters)):
 
     print('TRAINING NEW MODEL')
     hdf5_path = "./data/data.hdf5"
-    extendable_hdf5_file = tables.openFile(hdf5_path, mode='r')
+    extendable_hdf5_file = tables.open_file(hdf5_path, mode='r')
     x = extendable_hdf5_file.root.x[:]
     y = extendable_hdf5_file.root.y[:]
     extendable_hdf5_file.close()

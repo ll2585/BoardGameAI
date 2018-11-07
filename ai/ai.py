@@ -31,21 +31,16 @@ class AI:
 
         # no idea what this means
 
-        board_input = Input(shape=(60,))
-        embedded_board = Embedding(input_dim=6, output_dim=72, input_length=60)(board_input)
-        embedded_board = Flatten()(embedded_board)
-        players_input = Input(shape=(4,))
-        x = keras.layers.concatenate([embedded_board, players_input])
-        x = Dense(72, activation='relu')(x)
-        x = Dense(50, activation='relu')(x)
-        x = Dense(36, activation='relu')(x)
-        x = Dense(18, activation='relu')(x)
-        x = Dense(9, activation='relu')(x)
+        ai = Sequential()
+        ai.add(Dense(20, input_shape=(184,)))
+        ai.add(Activation('relu'))
+        ai.add(Dense(2))
+        ai.add(Activation('sigmoid'))
+        ai.compile(loss='binary_crossentropy',
+                   optimizer='adam',
+                   metrics=['accuracy'])
 
-        score_output = Dense(1, activation='sigmoid')(x)
-
-        self.model = Model(inputs=x, outputs = score_output)
-        self.model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+        self.model = ai
 
 
     def initialize_network_layers(self):
@@ -62,7 +57,7 @@ class AI:
 
     def make_prediction(self, x):
         predictions = self.model.predict(x)
-        rounded = [x[0] for x in predictions]
+        rounded = [x[1] for x in predictions]
         return rounded
 
     def save_model(self, main_name,  index=0, verbose=False):
@@ -83,7 +78,10 @@ class AI:
             print('loading {filename}'.format(filename=filename))
         self.model = load_model(filename)
 
-    def train_model(self, n_epochs=200, batch_size=1000, verbose=0):
-        self.model.fit(self.x, self.y, epochs=n_epochs, batch_size=batch_size, verbose=verbose)
-        scores = self.model.evaluate(self.x, self.y)
+    def train_model(self, n_epochs=10, batch_size=100, verbose=0):
+        categorical_y = keras.utils.to_categorical(self.y, 2)
+        x = self.x
+        y = categorical_y
+        self.model.fit(x, categorical_y, epochs=n_epochs, batch_size=batch_size, verbose=verbose)
+        scores = self.model.evaluate(x, y)
         print("\n%s: %.2f%%" % (self.model.metrics_names[1], scores[1] * 100))

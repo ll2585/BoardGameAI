@@ -42,6 +42,9 @@ class FishGame:
     def get_players(self):
         return self.players
 
+    def get_player_ids(self):
+        return [p.get_player_id() for p in self.players]
+
     def start(self):
         self.current_player = self.players[0]
         self.player_who_moved = -1
@@ -124,11 +127,10 @@ class FishGame:
             x.append(state)
             if player_who_moved == winner:
                 y.append(1)
-            elif winner == -1:
-                y.append(0)
             else:
-                y.append(-1)
-        return np.asarray(x), np.asarray(y)
+                y.append(0)
+
+        return np.asarray(x, dtype=np.float32), np.asarray(y, dtype=np.float32)
 
     def get_current_player_id(self):
         return self.current_player.get_player_id()
@@ -162,7 +164,8 @@ class FishGame:
         players = [p.get_state() for p in self.players]
         current_player_id = self.get_current_player_id()
         player_who_moved = self.player_who_moved
-        return FishState(deepcopy(board), deepcopy(players), deepcopy(current_player_id), deepcopy(player_who_moved))
+        player_ids = [p.get_player_id() for p in self.players]
+        return FishState(deepcopy(board), deepcopy(players), deepcopy(current_player_id), deepcopy(player_who_moved), deepcopy(player_ids))
 
     def is_over(self):
         player_1 = self.players[0]

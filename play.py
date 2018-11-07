@@ -10,7 +10,7 @@ from tqdm import tqdm
 num_games = 100
 x = None
 y = None
-write_data = False
+write_data = True
 wins = {
 
 }
@@ -41,18 +41,20 @@ for i in tqdm(range(num_games)):
     else:
         x = np.concatenate((x, game.get_full_game_history_for_neural_net()[0]), axis=0)
         y = np.concatenate((y, game.get_full_game_history_for_neural_net()[1]), axis=0)
+np.set_printoptions(threshold=np.nan)
 print(wins)
+
 
 if write_data:
 
-    hdf5_file = tables.openFile('../data/data.hdf5', 'w')
+    hdf5_file = tables.open_file('./data/data.hdf5', 'w')
     filters = tables.Filters(complevel=5, complib='blosc')
-    x_storage = hdf5_file.createEArray(hdf5_file.root, 'x',
+    x_storage = hdf5_file.create_earray(hdf5_file.root, 'x',
                                           tables.Atom.from_dtype(x.dtype),
                                           shape=(0, x.shape[-1]),
                                           filters=filters,
                                           expectedrows=len(x))
-    y_storage = hdf5_file.createEArray(hdf5_file.root, 'y',
+    y_storage = hdf5_file.create_earray(hdf5_file.root, 'y',
                                               tables.Atom.from_dtype(y.dtype),
                                               shape=(0,),
                                               filters=filters,

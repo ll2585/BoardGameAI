@@ -5,7 +5,13 @@ import numpy as np
 import random
 import time
 from fish.fish_state import FishState
+import random
 
+def choose_from_probs(probs):
+    # will almost always make optimal decision;
+    weights = probs / np.sum(probs)
+    choice = np.random.choice(range(len(probs)), size=1, p=weights)
+    return choice[0]
 
 class NaiveAIPlayer(Player):
     def __init__(self, player_id, name, game, main_name, index):
@@ -38,9 +44,10 @@ class NaiveAIPlayer(Player):
                 new_states = new_state
             else:
                 new_states = np.concatenate((new_states, new_state), axis=0)
-        prediction = self.ai.make_prediction(new_states)
-        max_index = prediction.index(max(prediction))
-        return possible_moves[max_index]
+        predictions = self.ai.make_prediction(new_states)
+        choice_index = choose_from_probs(predictions)
+
+        return possible_moves[choice_index]
 
     def state_from_move(self, action):
         player_id = action.player.get_player_id()
@@ -58,6 +65,7 @@ class NaiveAIPlayer(Player):
         cur_player = new_players[new_player_index]
         next_player_index = 1 if new_player_index == 0 else 0
         next_player = new_players[next_player_index]
+        player_ids = deepcopy(self.game.get_player_ids())
 
         if action.type == "move":
             hex_from = new_board.pieces[action.start]
@@ -92,4 +100,4 @@ class NaiveAIPlayer(Player):
             cur_player[0].append(action.start)
         else:
             raise Exception("WRONG ACTION TYPE")
-        return FishState(deepcopy(new_board.pieces), deepcopy(new_players), deepcopy(next_player_id), deepcopy(player_who_moved))
+        return FishState(deepcopy(new_board.pieces), deepcopy(new_players), deepcopy(next_player_id), deepcopy(player_who_moved), deepcopy(player_ids))

@@ -8,7 +8,7 @@ from pathlib import Path
 # Setup
 from tqdm import tqdm
 
-num_games = 20
+num_games = 15
 #if random wins 9 or more games, keep random
 #otherwise keep the other model
 x = None
@@ -17,12 +17,12 @@ wins = {
 
 }
 
-write_data = True
+write_data = False
 
 for i in tqdm(range(num_games)):
     game = FishGame()
     player_1 = RandomPlayer(0,"CHARLA",game)
-    player_2 = NaiveAIPlayer(1,"CHARLA",game,main_name='model', index=2)
+    player_2 = NaiveAIPlayer(1,"CHARLA",game,main_name='model', index=11)
     game.set_up()
     players = [player_1, player_2]
     for player in players:
@@ -53,7 +53,7 @@ print(wins)
 
 if write_data:
     hdf5_path = "./data/data.hdf5"
-    extendable_hdf5_file = tables.openFile(hdf5_path, mode='a')
+    extendable_hdf5_file = tables.open_file(hdf5_path, mode='a')
     extendable_hdf5_x = extendable_hdf5_file.root.x
     extendable_hdf5_y = extendable_hdf5_file.root.y
     for n, (d, c) in enumerate(zip(x, y)):
