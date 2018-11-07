@@ -15,10 +15,10 @@ class NaiveAIPlayer(Player):
 
     def move(self):
         possible_moves = self.game.get_possible_moves(self)
-        if len(self.penguins) < 4:
-            #random place cus f it
-            move = random.choice(possible_moves)
-            return move
+        #if len(self.penguins) < 4:
+        #    #random place cus f it
+        #    move = random.choice(possible_moves)
+        #    return move
         new_states = None
         for move in possible_moves:
             '''

@@ -30,13 +30,21 @@ class AI:
             raise Exception("NEED TO LOAD DATA FIRST")
 
         # no idea what this means
-        self.model = Sequential()
-        self.model.add(Dense(72, input_dim=64, activation='relu'))
-        self.model.add(Dense(50, activation='relu'))
-        self.model.add(Dense(36, activation='relu'))
-        self.model.add(Dense(18, activation='relu'))
-        self.model.add(Dense(9, activation='relu'))
-        self.model.add(Dense(1, activation='relu'))
+
+        board_input = Input(shape=(60,))
+        embedded_board = Embedding(input_dim=6, output_dim=72, input_length=60)(board_input)
+        embedded_board = Flatten()(embedded_board)
+        players_input = Input(shape=(4,))
+        x = keras.layers.concatenate([embedded_board, players_input])
+        x = Dense(72, activation='relu')(x)
+        x = Dense(50, activation='relu')(x)
+        x = Dense(36, activation='relu')(x)
+        x = Dense(18, activation='relu')(x)
+        x = Dense(9, activation='relu')(x)
+
+        score_output = Dense(1, activation='sigmoid')(x)
+
+        self.model = Model(inputs=x, outputs = score_output)
         self.model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 

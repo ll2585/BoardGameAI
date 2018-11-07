@@ -8,7 +8,7 @@ x = extendable_hdf5_file.root.x[:]
 y = extendable_hdf5_file.root.y[:]
 extendable_hdf5_file.close()
 
-latest_version = 1
+latest_version = None
 
 ai = AI()
 ai.load_data(x,y)

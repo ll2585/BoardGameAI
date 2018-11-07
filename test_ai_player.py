@@ -21,8 +21,8 @@ write_data = True
 
 for i in tqdm(range(num_games)):
     game = FishGame()
-    player_1 = NaiveAIPlayer(0,"CHARLA",game,main_name='model', index=1)
-    player_2 = NaiveAIPlayer(1,"CHARLA",game,main_name='model', index=12)
+    player_1 = RandomPlayer(0,"CHARLA",game)
+    player_2 = NaiveAIPlayer(1,"CHARLA",game,main_name='model', index=2)
     game.set_up()
     players = [player_1, player_2]
     for player in players:
