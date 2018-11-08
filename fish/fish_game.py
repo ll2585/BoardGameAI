@@ -181,6 +181,14 @@ class FishGame:
         else:
             return "None! It's a draw!"
 
+    def get_winner_name(self):
+        if self.get_winner_id() == self.players[0].get_player_id():
+            return self.players[0].get_name()
+        elif self.get_winner_id() == self.players[1].get_player_id():
+            return self.players[1].get_name()
+        else:
+            return "None! It's a draw!"
+
     def get_winner_id(self):
         player_1 = self.players[0]
         player_2 = self.players[1]

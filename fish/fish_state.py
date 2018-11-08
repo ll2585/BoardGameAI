@@ -39,7 +39,10 @@ class FishState:
                 board_penguins.append(1)
             else:
                 board_penguins.append(0)
-            board_points.append(cell.value)
+            if cell.value == -1:
+                board_points.append(0)
+            else:
+                board_points.append(cell.value)
 
         player_1_serialization = player_1[1:]
         player_2_serialization = player_2[1:]

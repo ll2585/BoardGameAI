@@ -6,6 +6,7 @@ from keras.models import load_model
 from keras.models import *
 from keras.layers import *
 from keras.optimizers import *
+# from sklearn.model_selection import train_test_split
 
 import numpy as np
 
@@ -18,6 +19,7 @@ class AI:
         self.x = None
         self.y = None
         self.model = None
+        self.n_players = 2
 
 
 
@@ -30,17 +32,30 @@ class AI:
             raise Exception("NEED TO LOAD DATA FIRST")
 
         # no idea what this means
+        board_input = Input(shape=(60,), dtype='int32', name='board_input')
+        x = Embedding(output_dim =4, input_dim=4, input_length=60)(board_input)
+        x = Flatten()(x)
+        x = Dense(200)(x)
 
-        ai = Sequential()
-        ai.add(Dense(20, input_shape=(184,)))
-        ai.add(Activation('relu'))
-        ai.add(Dense(2))
-        ai.add(Activation('sigmoid'))
-        ai.compile(loss='binary_crossentropy',
+        player_inputs = Input(shape=(124,))
+        player_dense = Dense(200)(player_inputs)
+
+        inputs = [board_input, player_inputs]
+        ai = keras.layers.concatenate([x, player_dense])
+        ai = Dense(100)(ai)
+        ai = Activation('relu')(ai)
+        ai = Dense(50)(ai)
+        ai = Activation('relu')(ai)
+        ai = Dense(25)(ai)
+        ai = Activation('relu')(ai)
+        ai = Dense(2)(ai)
+        ai = Activation('sigmoid')(ai)
+        model = Model(inputs = inputs, outputs = ai)
+        model.compile(loss='binary_crossentropy',
                    optimizer='adam',
                    metrics=['accuracy'])
 
-        self.model = ai
+        self.model = model
 
 
     def initialize_network_layers(self):
@@ -56,7 +71,9 @@ class AI:
         return next_layer
 
     def make_prediction(self, x):
-        predictions = self.model.predict(x)
+        board_x = x[:, :60]
+        player_x = x[:, 60:]
+        predictions = self.model.predict([np.array(board_x), np.array(player_x)])
         rounded = [x[1] for x in predictions]
         return rounded
 
@@ -78,10 +95,19 @@ class AI:
             print('loading {filename}'.format(filename=filename))
         self.model = load_model(filename)
 
-    def train_model(self, n_epochs=10, batch_size=100, verbose=0):
+    def train_model(self, n_epochs=100, batch_size=1000, verbose=0):
         categorical_y = keras.utils.to_categorical(self.y, 2)
-        x = self.x
-        y = categorical_y
-        self.model.fit(x, categorical_y, epochs=n_epochs, batch_size=batch_size, verbose=verbose)
-        scores = self.model.evaluate(x, y)
+        board_x = self.x[:,:60]
+        player_x = self.x[:,60:]
+
+        self.model.fit([board_x, player_x], categorical_y, epochs=n_epochs, batch_size=batch_size, verbose=verbose,
+                       validation_split=.33, shuffle=True)
+        scores = self.model.evaluate([board_x, player_x], categorical_y)
         print("\n%s: %.2f%%" % (self.model.metrics_names[1], scores[1] * 100))
+
+    def evaluate_data(self, x, y):
+        categorical_y = keras.utils.to_categorical(y, 2)
+        board_x = x[:, :60]
+        player_x = x[:, 60:]
+        scores = self.model.evaluate([board_x, player_x], categorical_y)
+        return scores[1]

@@ -2,14 +2,15 @@ import numpy as np
 from ai.ai import AI
 import keras
 import tables
+data_filename = 'data_new_3'
 
-hdf5_path = "./data/data.hdf5"
+hdf5_path = "./data/{0}.hdf5".format(data_filename)
 extendable_hdf5_file = tables.open_file(hdf5_path, mode='r')
 x = extendable_hdf5_file.root.x[:]
 y = extendable_hdf5_file.root.y[:]
 extendable_hdf5_file.close()
 
-latest_version = 8
+latest_version = 11
 
 ai = AI()
 ai.load_data(x,y)
