@@ -44,10 +44,13 @@ class AI:
         ai = keras.layers.concatenate([x, player_dense])
         ai = Dense(100)(ai)
         ai = Activation('relu')(ai)
+        ai = Dropout(.1)(ai)
         ai = Dense(50)(ai)
         ai = Activation('relu')(ai)
+        ai = Dropout(.05)(ai)
         ai = Dense(25)(ai)
         ai = Activation('relu')(ai)
+        ai = Dropout(.05)(ai)
         ai = Dense(2)(ai)
         ai = Activation('sigmoid')(ai)
         model = Model(inputs = inputs, outputs = ai)
@@ -95,14 +98,15 @@ class AI:
             print('loading {filename}'.format(filename=filename))
         self.model = load_model(filename)
 
-    def train_model(self, n_epochs=100, batch_size=1000, verbose=0):
+    def train_model(self, n_epochs=100, batch_size=1000, verbose=False):
         categorical_y = keras.utils.to_categorical(self.y, 2)
         board_x = self.x[:,:60]
         player_x = self.x[:,60:]
-
-        self.model.fit([board_x, player_x], categorical_y, epochs=n_epochs, batch_size=batch_size, verbose=verbose,
+        print("Fitting Model")
+        hist = self.model.fit([board_x, player_x], categorical_y, epochs=n_epochs, batch_size=batch_size, verbose=verbose,
                        validation_split=.33, shuffle=True)
-        scores = self.model.evaluate([board_x, player_x], categorical_y)
+        print(hist.history)
+        scores = self.model.evaluate([board_x, player_x], categorical_y, verbose=False)
         print("\n%s: %.2f%%" % (self.model.metrics_names[1], scores[1] * 100))
 
     def evaluate_data(self, x, y):

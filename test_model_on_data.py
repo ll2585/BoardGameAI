@@ -1,6 +1,7 @@
 from ai.ai import AI
 import tables
 from pprint import pprint
+import constants
 
 def load_ai(main_name, index):
     ai = AI()
@@ -18,14 +19,15 @@ def load_data(filename):
 def evaluate_ai(ai, x, y):
     return ai.evaluate_data(x,y)
 
-latest_version = 12
+constants.use_gpu()
+latest_version = 22
 
 model_accuracies = {}
 for model_version in range(latest_version+1):
     model_accuracies[model_version] = {}
     ai = load_ai('model', model_version)
-    for i in range(5):
-        x, y = load_data('data_new_{0}'.format(i))
+    for i in range(8):
+        x, y = load_data('data_new2_{0}'.format(i))
         model_accuracies[model_version][i] = evaluate_ai(ai, x, y)
 
 pprint(model_accuracies)

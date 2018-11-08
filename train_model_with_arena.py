@@ -8,16 +8,36 @@ from pathlib import Path
 # Setup
 from tqdm import tqdm
 from ai.ai import AI
+import keras
+import tensorflow as tf
 
-max_iters = 10
-num_games = 15
-win_threshold = 7
-last_model = 0
+from keras.backend.tensorflow_backend import set_session
+config = tf.ConfigProto(
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.8)
+    # device_count = {'GPU': 1}
+)
+config.gpu_options.allow_growth = True
+session = tf.Session(config=config)
+set_session(session)
+
+max_iters = 25
+num_games = 25
+win_threshold = .75
+last_model = 14
 best_model = None
 random_player_1 = True
+write_score_threshold = .7
+iters = 0
+keep_testing = True
 
+times_to_write = 20
+write_new_file = True
+write_data = True
+max_games = 80
 
-for iters in tqdm(range(max_iters)):
+while iters < max_iters:
+    data_filename = 'data_new2_{0}'.format(iters)
+    times_written = 0
     num_games = num_games
     #if random wins 9 or more games, keep random
     #otherwise keep the other model
@@ -30,7 +50,8 @@ for iters in tqdm(range(max_iters)):
     player_2 = None
     game = None
     new_challenger_name = "Model {0}".format(last_model+iters)
-    for i in tqdm(range(num_games)):
+    games_played = 0
+    while (games_played < num_games) or (times_written < times_to_write and games_played < max_games): #quit if 20 shit and 25 games played, or 80 games played and < 20 shit (so its not that bad)
         game = FishGame()
         if random_player_1:
             player_1 = RandomPlayer(0,"Random Bob",game)
@@ -55,32 +76,70 @@ for iters in tqdm(range(max_iters)):
         if winner not in wins:
             wins[winner] = 0
         wins[winner] += 1
+        games_played += 1
+
+        this_x = game.get_full_game_history_for_neural_net()[0]
+        this_y = game.get_full_game_history_for_neural_net()[1]
+
+        board_x = this_x[:, :60]
+        player_x = this_x[:, 60:]
+        categorical_y = keras.utils.to_categorical(this_y, 2)
+        scores = player_2.ai.model.evaluate([board_x, player_x], categorical_y)
+        print("\n%s: %.2f%%" % (player_2.ai.model.metrics_names[1], scores[1] * 100))
         print("winner: {0}".format(winner))
+        print(wins)
+
+        if write_score_threshold is not None and scores[1] < write_score_threshold:
+            times_written += 1
+            print('shitty accuracy #{0}'.format(times_written))
         if x is None:
-            x = game.get_full_game_history_for_neural_net()[0]
-            y = game.get_full_game_history_for_neural_net()[1]
+            x = this_x
+            y = this_y
         else:
-            x = np.concatenate((x, game.get_full_game_history_for_neural_net()[0]), axis=0)
-            y = np.concatenate((y, game.get_full_game_history_for_neural_net()[1]), axis=0)
+            x = np.concatenate((x, this_x), axis=0)
+            y = np.concatenate((y, this_y), axis=0)
+
+
 
     print(wins)
-    hdf5_path = "./data/data.hdf5"
-    extendable_hdf5_file = tables.open_file(hdf5_path, mode='a')
-    extendable_hdf5_x = extendable_hdf5_file.root.x
-    extendable_hdf5_y = extendable_hdf5_file.root.y
-    for n, (d, c) in enumerate(zip(x, y)):
-        extendable_hdf5_x.append(x[n][None])
-        extendable_hdf5_y.append(y[n][None])
-    extendable_hdf5_file.close()
+    if write_data and x is not None:
+        print("writing data")
+        hdf5_path = "./data/data.hdf5".format(data_filename)
+        extendable_hdf5_file = tables.open_file(hdf5_path, mode='a')
+        extendable_hdf5_x = extendable_hdf5_file.root.x
+        extendable_hdf5_y = extendable_hdf5_file.root.y
+        for n, (d, c) in enumerate(zip(x, y)):
+            extendable_hdf5_x.append(x[n][None])
+            extendable_hdf5_y.append(y[n][None])
+        extendable_hdf5_file.close()
 
-    if wins[new_challenger_name] < win_threshold:
-        #check player 0 first because that's the random guy and we want to keep him if we can
-        best_model = best_model
-    else:
+    if write_new_file and x is not None:
+
+        hdf5_file = tables.open_file('./data/{0}.hdf5'.format(data_filename), 'w')
+        filters = tables.Filters(complevel=5, complib='blosc')
+        x_storage = hdf5_file.create_earray(hdf5_file.root, 'x',
+                                            tables.Atom.from_dtype(x.dtype),
+                                            shape=(0, x.shape[-1]),
+                                            filters=filters,
+                                            expectedrows=len(x))
+        y_storage = hdf5_file.create_earray(hdf5_file.root, 'y',
+                                            tables.Atom.from_dtype(y.dtype),
+                                            shape=(0,),
+                                            filters=filters,
+                                            expectedrows=len(y))
+        for n, (d, c) in enumerate(zip(x, y)):
+            x_storage.append(x[n][None])
+            y_storage.append(y[n][None])
+        hdf5_file.close()
+
+    if wins[new_challenger_name] > (win_threshold*games_played):
         if random_player_1:
             random_player_1 = False
         print("NEW BEST PLAYER")
         best_model = last_model+iters
+    else:
+        best_model = best_model
+
 
     print('TRAINING NEW MODEL')
     hdf5_path = "./data/data.hdf5"
@@ -95,3 +154,4 @@ for iters in tqdm(range(max_iters)):
     ai.train_model()
     ai.save_model('model', index=iters+last_model+1)
     print("MODEL TRAINED LETS GO")
+    iters += 1
