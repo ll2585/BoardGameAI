@@ -14,10 +14,13 @@ def choose_from_probs(probs):
     return choice[0]
 
 class NaiveAIPlayer(Player):
-    def __init__(self, player_id, name, game, main_name, index):
+    def __init__(self, player_id, name, game, main_name=None, index=None, initialize=False):
         Player.__init__(self, player_id, name, game)
         self.ai = AI()
-        self.ai.load_model(main_name, index=index)
+        if not initialize:
+            assert main_name is not None
+            assert index is not None
+            self.ai.load_model(main_name, index=index)
 
     def move(self):
         possible_moves = self.game.get_possible_moves(self)
