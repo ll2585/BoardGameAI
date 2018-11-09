@@ -8,6 +8,9 @@ from pathlib import Path
 # Setup
 from tqdm import tqdm
 import keras
+import constants
+
+constants.use_gpu()
 
 num_games = 1
 #if random wins 9 or more games, keep random
@@ -18,8 +21,8 @@ wins = {
 
 }
 
-write_data = True
-write_new_file = True
+write_data = False
+write_new_file = False
 data_filename = 'data_new'
 write_score_threshold = .7
 
@@ -29,8 +32,8 @@ times_written = 0
 #while times_written < times_to_write:
 for i in tqdm(range(num_games)):
     game = FishGame()
-    player_1 = RandomPlayer(0,"CHARLA",game)
-    player_2 = NaiveAIPlayer(1,"CHARLA",game,main_name='model', index=0)
+    player_1 = RandomPlayer(0,"BOB",game)
+    player_2 = NaiveAIPlayer(1,"CHARLA",game,main_name='model', index=49)
     game.set_up()
     players = [player_1, player_2]
     for player in players:
@@ -44,6 +47,7 @@ for i in tqdm(range(num_games)):
         cur_player = game.get_current_player()
         move = cur_player.move()
         game.do_move(move)
+        print(game.get_player_scores())
     print('---------------------------------------------------------------------')
     display(game)
 
@@ -56,9 +60,11 @@ for i in tqdm(range(num_games)):
     this_x = game.get_full_game_history_for_neural_net()[0]
     this_y = game.get_full_game_history_for_neural_net()[1]
 
+
     board_x = this_x[:, :60]
     player_x = this_x[:, 60:]
     categorical_y = keras.utils.to_categorical(this_y, 3)
+
     scores = player_2.ai.model.evaluate([board_x, player_x], categorical_y)
     print("\n%s: %.2f%%" % (player_2.ai.model.metrics_names[1], scores[1] * 100))
     print("winner: {0}".format(winner))

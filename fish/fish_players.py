@@ -24,8 +24,20 @@ class Player:
         self.score = 0
         self.tiles_collected = 0
 
+    def get_score(self):
+        return self.score
+
+    def get_tiles(self):
+        return self.tiles_collected
+
     def get_name(self):
         return self.name
+
+    def set_name(self, name):
+        self.name = name
+
+    def set_player_id(self, player_id):
+        self.player_id = player_id
 
     def get_player_id(self):
         return self.player_id

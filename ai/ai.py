@@ -57,12 +57,11 @@ class AI:
 
         self.model = model
 
-
     def make_prediction(self, x):
         board_x = x[:, :60]
         player_x = x[:, 60:]
         predictions = self.model.predict([np.array(board_x), np.array(player_x)])
-        rounded = [x[1] for x in predictions]
+        rounded = [x[0] for x in predictions]
         return rounded
 
     def save_model(self, main_name,  index=0, verbose=False):
@@ -87,11 +86,10 @@ class AI:
         categorical_y = keras.utils.to_categorical(self.y, 3)
         board_x = self.x[:,:60]
         player_x = self.x[:,60:]
-        print("Fitting Model")
         hist = self.model.fit([board_x, player_x], categorical_y, epochs=n_epochs, batch_size=batch_size, verbose=True,
                        validation_split=.33, shuffle=True)
-        print('loss: {0}'.format(hist.history['loss']))
-        print('val loss: {0}'.format(hist.history['val_loss']))
+        print('loss: {0}'.format(hist.history['loss'][-1]))
+        print('val loss: {0}'.format(hist.history['val_loss'][-1]))
         scores = self.model.evaluate([board_x, player_x], categorical_y, verbose=False)
         print("\n%s: %.2f%%" % (self.model.metrics_names[1], scores[1] * 100))
 

@@ -24,6 +24,7 @@ class NaiveAIPlayer(Player):
         else:
             self.ai.create_model()
 
+
     def move(self):
         possible_moves = self.game.get_possible_moves(self)
         #if len(self.penguins) < 4:
@@ -106,3 +107,9 @@ class NaiveAIPlayer(Player):
         else:
             raise Exception("WRONG ACTION TYPE")
         return FishState(deepcopy(new_board.pieces), deepcopy(new_players), deepcopy(next_player_id), deepcopy(player_who_moved), deepcopy(player_ids))
+
+    def train_and_save_new_model(self,x,y, new_index):
+        self.ai.load_data(x, y)
+        self.ai.create_model()
+        self.ai.train_model()
+        self.ai.save_model('model', index=new_index)

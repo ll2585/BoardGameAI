@@ -46,6 +46,8 @@ class FishGame:
         return [p.get_player_id() for p in self.players]
 
     def start(self):
+        print("Starting new game")
+        assert self.players[0].get_player_id() != self.players[1].get_player_id()
         self.current_player = self.players[0]
         self.player_who_moved = -1
 
@@ -212,6 +214,12 @@ class FishGame:
             else:
                 # draw has a very little value
                 return -1
+
+    def get_player_scores(self):
+        scores = {}
+        for p in self.players:
+            scores[p.get_name()] = {'points': p.get_score(), 'tiles': p.get_tiles()}
+        return scores
 
 #   00  01  02  03  04  05  06
 # 07  08  09  10  11  12  13  14

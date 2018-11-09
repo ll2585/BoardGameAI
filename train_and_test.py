@@ -15,21 +15,31 @@ import tables
 from ai.ai import AI
 import keras
 import tensorflow as tf
+import constants
 
-x1 = [[1,2,3],[7,4,6]]
-x2 = [[54,72,32],[37,4534,636]]
-xs = [np.asarray(x1), np.asarray(x2)]
+constants.use_gpu()
 
-total_generations = 5
-models_per_generation = 10
-num_games = 25
-best_model = None
-win_threshold = .75
+
+total_generations = 25
+models_per_generation = 10 # data capped here
+num_games = 50
+run = 1
+
+best_model = 48 #has to be 1 less than total models...
+trained_models = -1 if best_model == 0 else best_model+1 #-1 if best model is 0
+
+challenger_name = "Model {0}".format(trained_models)
+
+game = FishGame()
+best_player = NaiveAIPlayer(best_model, "Model {0}".format(best_model), game, main_name='model', index=best_model, initialize =(best_model == 0))
+challenger = NaiveAIPlayer(trained_models, challenger_name, game, main_name='model', index=trained_models, initialize =(best_model == 0))
+
+win_threshold = .55
 
 write_new_file = True
 
 cur_generation = 0
-trained_models = 0
+
 
 all_games_x = []
 all_games_y = []
@@ -38,7 +48,8 @@ while cur_generation < total_generations:
     games_to_train_x = None
     games_to_train_y = None
     while cur_iter < models_per_generation:
-        data_filename = 'data_gen_{0}_iter_{0}'.format(cur_generation, cur_iter)
+        data_filename = 'data_run_{0}_gen_{1}_iter_{2}'.format(run, cur_generation, cur_iter)
+        print(data_filename)
         x = None
         y = None
         wins = {
@@ -46,19 +57,23 @@ while cur_generation < total_generations:
         }
         player_1 = None
         player_2 = None
-        game = None
-        new_challenger_name = "Model {0}".format(trained_models)
+        challenger_name = "Model {0}".format(trained_models)
+        challenger_id = trained_models
+        challenger.set_player_id(challenger_id)
+        challenger.set_name(challenger_name)
         games_played = 0
+
+        print("Setting up players")
+        if best_model is None: #start with 2 idiots
+            player_1 = NaiveAIPlayer(-1, "Model 0", game, initialize=True)
+            player_2 = NaiveAIPlayer(0, "Model 0", game, initialize=True)
+        else:
+            player_1 = best_player
+            player_2 = challenger
+        players = [player_1, player_2]
+        print("players set up.")
         while games_played < num_games:
-            game = FishGame()
-            if best_model is None: #start with 2 idiots
-                player_1 = NaiveAIPlayer(-1, "Model 0", game, initialize=True)
-                player_2 = NaiveAIPlayer(0, "Model 0", game, initialize=True)
-            else:
-                player_1 = NaiveAIPlayer(best_model, "Model {0}".format(best_model), game, main_name='model', index=best_model, initialize =(best_model == 0))
-                player_2 = NaiveAIPlayer(trained_models, new_challenger_name, game, main_name='model', index=trained_models)
             game.set_up()
-            players = [player_1, player_2]
             for player in players:
                 player.reset()
                 game.add_player(player)
@@ -68,7 +83,7 @@ while cur_generation < total_generations:
                 cur_player = game.get_current_player()
                 move = cur_player.move()
                 game.do_move(move)
-
+            print("Game over")
             #0 is the Player[0], 1 is Player[1]
             winner = game.get_winner_name()
             if winner not in wins:
@@ -102,46 +117,38 @@ while cur_generation < total_generations:
 
             if write_new_file and x is not None:
 
-                hdf5_file = tables.open_file('./data/{0}.hdf5'.format(data_filename), 'w')
-                filters = tables.Filters(complevel=5, complib='blosc')
-                x_storage = hdf5_file.create_earray(hdf5_file.root, 'x',
-                                                    tables.Atom.from_dtype(x.dtype),
-                                                    shape=(0, x.shape[-1]),
-                                                    filters=filters,
-                                                    expectedrows=len(x))
-                y_storage = hdf5_file.create_earray(hdf5_file.root, 'y',
-                                                    tables.Atom.from_dtype(y.dtype),
-                                                    shape=(0,),
-                                                    filters=filters,
-                                                    expectedrows=len(y))
-                for n, (d, c) in enumerate(zip(x, y)):
-                    x_storage.append(x[n][None])
-                    y_storage.append(y[n][None])
-                hdf5_file.close()
+                filename = './data/{0}.hdf5'.format(data_filename)
+                constants.write_to_new_file(filename, x, y)
 
-            if wins[new_challenger_name] > (win_threshold*games_played) or (trained_models == 0):
+            if wins[challenger_name] > (win_threshold*games_played) or (trained_models == 0):
                 print("NEW BEST PLAYER")
                 best_model = trained_models
+                new_challenger = best_player
+                best_player = challenger
+                challenger = new_challenger
             else:
                 best_model = best_model
-
+                best_player = best_player
+                challenger = challenger
 
             print('TRAINING NEW MODEL')
             total_games_played = len(all_games_x)
-            if total_games_played > models_per_generation:
-                x = np.concatenate(all_games_x[total_games_played-models_per_generation:])
-                y = np.concatenate(all_games_y[total_games_played-models_per_generation:])
+
+            if total_games_played > models_per_generation*num_games:
+                print("breaking it out")
+                x = np.concatenate(all_games_x[total_games_played-models_per_generation*num_games:])
+                y = np.concatenate(all_games_y[total_games_played-models_per_generation*num_games:])
             else:
+                print("all x")
                 x = np.concatenate(all_games_x)
                 y = np.concatenate(all_games_y)
-
-
-            ai = AI()
-            ai.load_data(x, y)
-            ai.create_model()
-            ai.train_model()
-            ai.save_model('model', index=trained_models+1)
+            if trained_models == -1:
+                trained_models = 0
+            challenger.train_and_save_new_model(x,y,trained_models+1)
             print("MODEL TRAINED LETS GO")
             trained_models += 1
         cur_iter += 1
     cur_generation += 1
+
+filename = './data/all_games_run_{0}.hdf5'.format(run)
+constants.write_to_new_file(filename, np.concatenate(all_games_x), np.concatenate(all_games_y))
