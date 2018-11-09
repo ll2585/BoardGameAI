@@ -28,50 +28,35 @@ class AI:
         self.y = y
 
     def create_model(self):
-        if self.x is None or self.y is None:
-            raise Exception("NEED TO LOAD DATA FIRST")
-
         # no idea what this means
         board_input = Input(shape=(60,), dtype='int32', name='board_input')
         x = Embedding(output_dim =4, input_dim=4, input_length=60)(board_input)
         x = Flatten()(x)
-        x = Dense(200)(x)
+        x = Dense(100, activation = 'relu')(x)
+        x = BatchNormalization()(x)
+        x = Dropout(.5)(x)
 
         player_inputs = Input(shape=(124,))
-        player_dense = Dense(200)(player_inputs)
+        player_dense = Dense(124, activation='relu')(player_inputs)
+        player_dense = BatchNormalization()(player_dense)
+        player_dense = Dropout(.5)(player_dense)
 
         inputs = [board_input, player_inputs]
         ai = keras.layers.concatenate([x, player_dense])
-        ai = Dense(100)(ai)
-        ai = Activation('relu')(ai)
-        ai = Dropout(.1)(ai)
-        ai = Dense(50)(ai)
-        ai = Activation('relu')(ai)
-        ai = Dropout(.05)(ai)
-        ai = Dense(25)(ai)
-        ai = Activation('relu')(ai)
-        ai = Dropout(.05)(ai)
-        ai = Dense(2)(ai)
-        ai = Activation('sigmoid')(ai)
+
+        ai = Dropout(.5)(ai)
+        ai = Dense(100,activation='relu')(ai)
+        ai = Dense(20, activation='relu')(ai)
+        ai = Dense(10, activation='relu')(ai)
+        ai = BatchNormalization()(ai)
+        ai = Dense(3, activation='softmax')(ai)#3 categories for draw
         model = Model(inputs = inputs, outputs = ai)
-        model.compile(loss='binary_crossentropy',
+        model.compile(loss='categorical_crossentropy',
                    optimizer='adam',
                    metrics=['accuracy'])
 
         self.model = model
 
-
-    def initialize_network_layers(self):
-        #no idea what the fuck this is doing
-        main_dense_layers = [Dense(n, activation='relu') for n in self.layer_size]
-
-        main_dense_input = keras.layers.concatenate(self.x_inputs)
-
-        next_layer = main_dense_input
-        for layer in main_dense_layers:
-            next_layer = layer(next_layer)
-
-        return next_layer
 
     def make_prediction(self, x):
         board_x = x[:, :60]
@@ -98,19 +83,20 @@ class AI:
             print('loading {filename}'.format(filename=filename))
         self.model = load_model(filename)
 
-    def train_model(self, n_epochs=100, batch_size=1000, verbose=False):
-        categorical_y = keras.utils.to_categorical(self.y, 2)
+    def train_model(self, n_epochs=30, batch_size=1000, verbose=False):
+        categorical_y = keras.utils.to_categorical(self.y, 3)
         board_x = self.x[:,:60]
         player_x = self.x[:,60:]
         print("Fitting Model")
-        hist = self.model.fit([board_x, player_x], categorical_y, epochs=n_epochs, batch_size=batch_size, verbose=verbose,
+        hist = self.model.fit([board_x, player_x], categorical_y, epochs=n_epochs, batch_size=batch_size, verbose=True,
                        validation_split=.33, shuffle=True)
-        print(hist.history)
+        print('loss: {0}'.format(hist.history['loss']))
+        print('val loss: {0}'.format(hist.history['val_loss']))
         scores = self.model.evaluate([board_x, player_x], categorical_y, verbose=False)
         print("\n%s: %.2f%%" % (self.model.metrics_names[1], scores[1] * 100))
 
     def evaluate_data(self, x, y):
-        categorical_y = keras.utils.to_categorical(y, 2)
+        categorical_y = keras.utils.to_categorical(y, 3)
         board_x = x[:, :60]
         player_x = x[:, 60:]
         scores = self.model.evaluate([board_x, player_x], categorical_y)

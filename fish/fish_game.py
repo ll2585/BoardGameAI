@@ -126,9 +126,12 @@ class FishGame:
             state = serialization['serialization']
             x.append(state)
             if player_who_moved == winner:
-                y.append(1)
-            else:
                 y.append(0)
+            elif winner == -1:
+                #draw
+                y.append(2)
+            else:
+                y.append(1)
 
         return np.asarray(x, dtype=np.float32), np.asarray(y, dtype=np.float32)
 

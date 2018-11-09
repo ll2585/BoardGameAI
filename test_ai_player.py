@@ -20,17 +20,17 @@ wins = {
 
 write_data = True
 write_new_file = True
-data_filename = 'data_new_4'
+data_filename = 'data_new'
 write_score_threshold = .7
 
 times_to_write = 20
 times_written = 0
 
-while times_written < times_to_write:
-#for i in tqdm(range(num_games)):
+#while times_written < times_to_write:
+for i in tqdm(range(num_games)):
     game = FishGame()
     player_1 = RandomPlayer(0,"CHARLA",game)
-    player_2 = NaiveAIPlayer(1,"CHARLA",game,main_name='model', index=12)
+    player_2 = NaiveAIPlayer(1,"CHARLA",game,main_name='model', index=0)
     game.set_up()
     players = [player_1, player_2]
     for player in players:
@@ -39,24 +39,30 @@ while times_written < times_to_write:
     game.start()
 
     while not game.is_over():
+        print('---------------------------------------------------------------------')
+        display(game)
         cur_player = game.get_current_player()
         move = cur_player.move()
         game.do_move(move)
+    print('---------------------------------------------------------------------')
+    display(game)
 
     #0 is the Player[0], 1 is Player[1]
     winner = game.get_winner()
     if winner not in wins:
         wins[winner] = 0
     wins[winner] += 1
-    print("winner: {0}".format(winner))
+
     this_x = game.get_full_game_history_for_neural_net()[0]
     this_y = game.get_full_game_history_for_neural_net()[1]
 
     board_x = this_x[:, :60]
     player_x = this_x[:, 60:]
-    categorical_y = keras.utils.to_categorical(this_y, 2)
+    categorical_y = keras.utils.to_categorical(this_y, 3)
     scores = player_2.ai.model.evaluate([board_x, player_x], categorical_y)
     print("\n%s: %.2f%%" % (player_2.ai.model.metrics_names[1], scores[1] * 100))
+    print("winner: {0}".format(winner))
+    print(wins)
 
     if (write_score_threshold is not None and scores[1] < write_score_threshold) or write_score_threshold is None:
         times_written += 1

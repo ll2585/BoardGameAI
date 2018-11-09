@@ -21,6 +21,8 @@ class NaiveAIPlayer(Player):
             assert main_name is not None
             assert index is not None
             self.ai.load_model(main_name, index=index)
+        else:
+            self.ai.create_model()
 
     def move(self):
         possible_moves = self.game.get_possible_moves(self)

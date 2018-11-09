@@ -47,7 +47,7 @@ print(wins)
 
 if write_data:
 
-    hdf5_file = tables.open_file('../data/data.hdf5', 'w')
+    hdf5_file = tables.open_file('./data/data.hdf5', 'w')
     filters = tables.Filters(complevel=5, complib='blosc')
     x_storage = hdf5_file.create_earray(hdf5_file.root, 'x',
                                           tables.Atom.from_dtype(x.dtype),

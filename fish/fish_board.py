@@ -56,7 +56,9 @@ class FishBoard():
         for i in range(8):
             self.pieces.append(Hexagon(i - 4, i + 3, 7))
         values = [1] * 30 + [2] * 20 + [3] * 10
+        random.seed(212)
         random.shuffle(values)
+        random.seed(None)
         for i, piece in enumerate(self.pieces):
             self.location_dict['{x}-{y}-{z}'.format(x=piece.x, y=piece.y, z=piece.z)] = i
             piece.set_value(values[i])
@@ -78,6 +80,52 @@ class FishBoard():
             pass
             #moves.append(FishMove(fish_index, fish_index, player=player))
         return moves
+
+    def get_number_of_possible_moves(self):
+        moves = 0
+        for i in range(len(self.pieces)):
+            for direction in ["left", "right", "top_left", "bottom_right", "top_right", "bottom_left"]:
+                moves += self.get_all_moves(i, direction)
+        return moves
+
+
+    def get_all_moves(self, start, direction):
+        my_hex = self.pieces[start]
+        my_x = my_hex.x
+        my_y = my_hex.y
+        my_z = my_hex.z
+        x = my_x
+        y = my_y
+        z = my_z
+        total_moves = 0
+
+        while True:
+            if direction == 'left':
+                x -= 1
+                y -= 1
+            elif direction == 'right':
+                x += 1
+                y += 1
+            elif direction == 'top_left':
+                y -= 1
+                z -= 1
+            elif direction == 'bottom_right':
+                y += 1
+                z += 1
+            elif direction == 'top_right':
+                z -= 1
+                x += 1
+            elif direction == 'bottom_left':
+                z += 1
+                x -= 1
+            else:
+                raise Exception("WRONG DIRECTION")
+            index = '{x}-{y}-{z}'.format(x=x, y=y, z=z)
+            if index not in self.location_dict:
+                break
+            total_moves += 1
+
+        return total_moves
 
     def get_moves_direction(self, start, direction, player):
         my_hex = self.pieces[start]
