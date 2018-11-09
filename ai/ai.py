@@ -61,6 +61,7 @@ class AI:
         board_x = x[:, :60]
         player_x = x[:, 60:]
         predictions = self.model.predict([np.array(board_x), np.array(player_x)])
+        print(predictions)
         rounded = [x[0] for x in predictions]
         return rounded
 

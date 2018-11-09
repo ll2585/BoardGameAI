@@ -30,10 +30,11 @@ times_to_write = 20
 times_written = 0
 
 #while times_written < times_to_write:
+
+game = FishGame()
+player_1 = RandomPlayer(0,"BOB",game)
+player_2 = NaiveAIPlayer(1,"CHARLA",game,main_name='all_data', index=9999)
 for i in tqdm(range(num_games)):
-    game = FishGame()
-    player_1 = RandomPlayer(0,"BOB",game)
-    player_2 = NaiveAIPlayer(1,"CHARLA",game,main_name='model', index=49)
     game.set_up()
     players = [player_1, player_2]
     for player in players:
@@ -65,7 +66,7 @@ for i in tqdm(range(num_games)):
     player_x = this_x[:, 60:]
     categorical_y = keras.utils.to_categorical(this_y, 3)
 
-    scores = player_2.ai.model.evaluate([board_x, player_x], categorical_y)
+    scores = player_2.ai.model.evaluate([board_x, player_x], categorical_y, verbose = False)
     print("\n%s: %.2f%%" % (player_2.ai.model.metrics_names[1], scores[1] * 100))
     print("winner: {0}".format(winner))
     print(wins)

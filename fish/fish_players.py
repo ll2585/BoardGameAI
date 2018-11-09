@@ -93,7 +93,9 @@ class RandomPlayer(Player):
 
     def move(self):
         possible_moves = self.game.get_possible_moves(self)
+        random.seed(212)
         move = random.choice(possible_moves)
+        random.seed(None)
         return move
 
 

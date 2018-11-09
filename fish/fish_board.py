@@ -56,7 +56,9 @@ class FishBoard():
         for i in range(8):
             self.pieces.append(Hexagon(i - 4, i + 3, 7))
         values = [1] * 30 + [2] * 20 + [3] * 10
+        random.seed(212)
         random.shuffle(values)
+        random.seed(None)
         for i, piece in enumerate(self.pieces):
             self.location_dict['{x}-{y}-{z}'.format(x=piece.x, y=piece.y, z=piece.z)] = i
             piece.set_value(values[i])

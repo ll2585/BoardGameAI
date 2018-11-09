@@ -5,10 +5,15 @@ import numpy as np
 import random
 import time
 from fish.fish_state import FishState
-import random
+import random, math
 
 def choose_from_probs(probs):
     # will almost always make optimal decision;
+    if len(probs) > 4:
+        sorted_probs = np.sort(probs)[::-1] #descending
+        #only look at top 25%
+        last_index = .25*len(probs)
+        probs = sorted_probs[:math.floor(last_index)]
     weights = probs / np.sum(probs)
     choice = np.random.choice(range(len(probs)), size=1, p=weights)
     return choice[0]
@@ -52,7 +57,6 @@ class NaiveAIPlayer(Player):
                 new_states = np.concatenate((new_states, new_state), axis=0)
         predictions = self.ai.make_prediction(new_states)
         choice_index = choose_from_probs(predictions)
-
         return possible_moves[choice_index]
 
     def state_from_move(self, action):
