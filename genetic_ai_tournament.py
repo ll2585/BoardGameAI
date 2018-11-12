@@ -10,7 +10,7 @@ import keras
 
 cur_gen = 0
 max_gens = 1
-ais_per_gen = 2
+ais_per_gen = 5
 keep_mother = True
 keep_father = True
 mutation_factor = {
@@ -45,9 +45,14 @@ y = extendable_hdf5_file.root.y[:]
 extendable_hdf5_file.close()
 print("Data loaded")
 test_with_games = False
-
+mother = None
+father = None
+mother_validation_loss = None
+father_validation_loss = None
+parent_stats = {}
 while cur_gen < max_gens:
     competitors = []
+    stats = {}
     if cur_gen == 0:
         mother = None
         father = None
@@ -64,8 +69,17 @@ while cur_gen < max_gens:
                                          player_neurons = player_neurons,
                                          hidden_layers=hidden_layers,
                                          hidden_neurons = hidden_neurons))
-    latest_version = None
+            stats[i] = {}
+            stats[i]['board_layers'] = board_layers
+            stats[i]['board_neurons'] = board_neurons
+            stats[i]['player_layers'] = player_layers
+            stats[i]['player_neurons'] = player_neurons
+            stats[i]['hidden_layers'] = hidden_layers
+            stats[i]['hidden_neurons'] = hidden_neurons
+
+    validation_losses = []
     for i, ai in enumerate(competitors):
+        latest_version = None
         ai_name = 'gen_{0}_ai_{1}'.format(cur_gen, i)
         ai.load_data(x, y)
         print("AI Loaded data")
@@ -77,64 +91,90 @@ while cur_gen < max_gens:
             print("AI Model Loaded")
         ai.train_model(x=x, y=y)
         ai.save_model(ai_name, index=latest_version + 1)
+        validation_loss = ai.hist.history['val_loss'][-1]
         print(ai.hist.history['val_loss'][-1])
-        raise Exception
+        validation_losses.append((validation_loss, i))
+    validation_losses = sorted(validation_losses, key=lambda x: x[0])
+    best_model = {
+        'model': competitors[validation_losses[0][1]],
+        'validation_loss': validation_losses[0][0],
+        'stats': stats[validation_losses[0][1]]
+    }
+    second_best_model = {
+        'model': competitors[validation_losses[1][1]],
+        'validation_loss': validation_losses[1][0],
+        'stats': stats[validation_losses[1][1]]
+    }
+    if mother is None:
+        mother = best_model
+        father = second_best_model
+    else:
+        mother_losses = mother['validation_loss']
+        father_losses = father['validation_loss']
+        all_losses = sorted([(validation_losses[0][0],best_model),
+                             (validation_losses[1][0],second_best_model),
+                             (mother_losses, mother),
+                             (father_losses, father)], key=lambda x: x[0])
+        mother = all_losses[0][1]
+        father = all_losses[1][1]
+    print(mother)
+    print(father)
 
 
-        if test_with_games:
-            num_games = 5
+    if test_with_games:
+        num_games = 5
 
-            x = None
-            y = None
-            wins = {
+        x = None
+        y = None
+        wins = {
 
-            }
+        }
 
-            game = FishGame()
-            player_1 = RandomPlayer(0, "BOB", game)
-            player_2 = NaiveAIPlayer(1, "CHARLA", game, main_name=ai_name, index=latest_version + 1)
-            for i in tqdm(range(num_games)):
-                game.set_up()
-                players = [player_1, player_2]
-                for player in players:
-                    player.reset()
-                    game.add_player(player)
-                game.start()
+        game = FishGame()
+        player_1 = RandomPlayer(0, "BOB", game)
+        player_2 = NaiveAIPlayer(1, "CHARLA", game, main_name=ai_name, index=latest_version + 1)
+        for i in tqdm(range(num_games)):
+            game.set_up()
+            players = [player_1, player_2]
+            for player in players:
+                player.reset()
+                game.add_player(player)
+            game.start()
 
-                while not game.is_over():
-                    cur_player = game.get_current_player()
-                    if cur_player.get_player_id() == 0:
-                        move = cur_player.move(seed=212)
-                    else:
-                        move = cur_player.move()
-                    game.do_move(move)
-
-                # 0 is the Player[0], 1 is Player[1]
-                winner = game.get_winner()
-                if winner not in wins:
-                    wins[winner] = 0
-                wins[winner] += 1
-
-                this_x = game.get_full_game_history_for_neural_net()[0]
-                this_y = game.get_full_game_history_for_neural_net()[1]
-
-                board_x = this_x[:, :60]
-                player_x = this_x[:, 60:]
-                categorical_y = keras.utils.to_categorical(this_y, 3)
-
-                scores = player_2.ai.model.evaluate([board_x, player_x], categorical_y, verbose=False)
-                print("\n%s: %.2f%%" % (player_2.ai.model.metrics_names[1], scores[1] * 100))
-                print("winner: {0}".format(winner))
-                print(wins)
-
-                if x is None:
-                    x = this_x
-                    y = this_y
+            while not game.is_over():
+                cur_player = game.get_current_player()
+                if cur_player.get_player_id() == 0:
+                    move = cur_player.move(seed=212)
                 else:
-                    x = np.concatenate((x, this_x), axis=0)
-                    y = np.concatenate((y, this_y), axis=0)
+                    move = cur_player.move()
+                game.do_move(move)
 
+            # 0 is the Player[0], 1 is Player[1]
+            winner = game.get_winner()
+            if winner not in wins:
+                wins[winner] = 0
+            wins[winner] += 1
+
+            this_x = game.get_full_game_history_for_neural_net()[0]
+            this_y = game.get_full_game_history_for_neural_net()[1]
+
+            board_x = this_x[:, :60]
+            player_x = this_x[:, 60:]
+            categorical_y = keras.utils.to_categorical(this_y, 3)
+
+            scores = player_2.ai.model.evaluate([board_x, player_x], categorical_y, verbose=False)
+            print("\n%s: %.2f%%" % (player_2.ai.model.metrics_names[1], scores[1] * 100))
+            print("winner: {0}".format(winner))
             print(wins)
+
+            if x is None:
+                x = this_x
+                y = this_y
+            else:
+                x = np.concatenate((x, this_x), axis=0)
+                y = np.concatenate((y, this_y), axis=0)
+
+        print(wins)
     else:
         print()
     cur_gen += 1
