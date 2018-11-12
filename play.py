@@ -27,7 +27,10 @@ for i in tqdm(range(num_games)):
 
     while not game.is_over():
         cur_player = game.get_current_player()
-        move = cur_player.move()
+        if cur_player.get_player_id() == 0:
+            move = cur_player.move(seed=212)
+        else:
+            move = cur_player.move()
         game.do_move(move)
 
     winner = game.get_winner()
@@ -47,7 +50,7 @@ print(wins)
 
 if write_data:
 
-    hdf5_file = tables.open_file('./data/data.hdf5', 'w')
+    hdf5_file = tables.open_file('./data/100_games.hdf5', 'w')
     filters = tables.Filters(complevel=5, complib='blosc')
     x_storage = hdf5_file.create_earray(hdf5_file.root, 'x',
                                           tables.Atom.from_dtype(x.dtype),

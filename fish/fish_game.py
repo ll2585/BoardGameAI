@@ -60,6 +60,10 @@ class FishGame:
             next_player_index = 0
         return self.players[next_player_index]
 
+    def get_moves_played(self):
+        tiles_collected = self.players[0].get_num_tiles() + self.players[1].get_num_tiles()
+        return tiles_collected
+
     def do_move(self, action, save_history = True):
         player_id = action.player.get_player_id()
         cur_player = self.get_current_player()
@@ -235,21 +239,24 @@ def display(game):
     players = game.get_players()
     p1_penguins = players[0].get_penguins()
     p2_penguins = players[1].get_penguins()
-    rows = [' ', '',
-            ' ', '',
-            ' ', '',
-            ' ', '']
+    rows = ['  ', '',
+            '  ', '',
+            '  ', '',
+            '  ', '']
     ends = [7, 15, 22, 30, 37, 45, 52, 60]
     for i in range(len(board.pieces)):
         for j, end in enumerate(ends):
             if i < end:
                 value = board.pieces[i].value
                 if value == -1:
-                    value = 0
+                    value = '_'
                 if i in p1_penguins:
-                    value = "P"
+                    penguin = "P"
                 elif i in p2_penguins:
-                    value = "Q"
-                rows[j] += str(value) + " "
+                    penguin = "Q"
+                else:
+                    penguin = "_"
+                value = '{0}{1}'.format(str(value), penguin)
+                rows[j] += str(value) + "  "
                 break
     print ('\n'.join(rows))

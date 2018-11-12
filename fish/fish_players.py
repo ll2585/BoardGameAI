@@ -91,9 +91,9 @@ class RandomPlayer(Player):
         #self.ai = FishNeuralNet(id=id, game=game)
         self.extended_serialized_action_history = []
 
-    def move(self):
+    def move(self, seed=None):
         possible_moves = self.game.get_possible_moves(self)
-        random.seed(212)
+        random.seed(seed)
         move = random.choice(possible_moves)
         random.seed(None)
         return move

@@ -30,10 +30,10 @@ times_to_write = 20
 times_written = 0
 
 #while times_written < times_to_write:
-
+show_game = True
 game = FishGame()
 player_1 = RandomPlayer(0,"BOB",game)
-player_2 = NaiveAIPlayer(1,"CHARLA",game,main_name='all_data', index=9999)
+player_2 = NaiveAIPlayer(1,"CHARLA",game,main_name='seeded_last_25', index=0, filtered_moves=20)
 for i in tqdm(range(num_games)):
     game.set_up()
     players = [player_1, player_2]
@@ -43,14 +43,20 @@ for i in tqdm(range(num_games)):
     game.start()
 
     while not game.is_over():
+        if show_game:
+            print('---------------------------------------------------------------------')
+            display(game)
+        cur_player = game.get_current_player()
+        if cur_player.get_player_id() == 0:
+            move = cur_player.move(seed=212)
+        else:
+            move = cur_player.move()
+        game.do_move(move)
+        if show_game:
+            print(game.get_player_scores())
+    if show_game:
         print('---------------------------------------------------------------------')
         display(game)
-        cur_player = game.get_current_player()
-        move = cur_player.move()
-        game.do_move(move)
-        print(game.get_player_scores())
-    print('---------------------------------------------------------------------')
-    display(game)
 
     #0 is the Player[0], 1 is Player[1]
     winner = game.get_winner()

@@ -19,7 +19,7 @@ def choose_from_probs(probs):
     return choice[0]
 
 class NaiveAIPlayer(Player):
-    def __init__(self, player_id, name, game, main_name=None, index=None, initialize=False):
+    def __init__(self, player_id, name, game, main_name=None, index=None, initialize=False, filtered_moves = None):
         Player.__init__(self, player_id, name, game)
         self.ai = AI()
         if not initialize:
@@ -28,14 +28,9 @@ class NaiveAIPlayer(Player):
             self.ai.load_model(main_name, index=index)
         else:
             self.ai.create_model()
+        self.filtered_moves = filtered_moves
 
-
-    def move(self):
-        possible_moves = self.game.get_possible_moves(self)
-        #if len(self.penguins) < 4:
-        #    #random place cus f it
-        #    move = random.choice(possible_moves)
-        #    return move
+    def get_model_move(self, possible_moves):
         new_states = None
         for move in possible_moves:
             '''
@@ -58,6 +53,23 @@ class NaiveAIPlayer(Player):
         predictions = self.ai.make_prediction(new_states)
         choice_index = choose_from_probs(predictions)
         return possible_moves[choice_index]
+
+    def get_random_move(self, possible_moves):
+        return random.choice(possible_moves)
+
+    def move(self):
+        possible_moves = self.game.get_possible_moves(self)
+        if self.filtered_moves is not None:
+            if (self.game.get_moves_played()-1) >= self.filtered_moves: # -1 because the next state is equal to the
+                # filtered moves...also should be tiles collected but whatevr
+                move = self.get_model_move(possible_moves)
+            else:
+                move = self.get_random_move(possible_moves)
+        else:
+            move = self.get_random_move(possible_moves)
+        return move
+
+
 
     def state_from_move(self, action):
         player_id = action.player.get_player_id()

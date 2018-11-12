@@ -1,0 +1,16 @@
+from easiest to hardest
+
+random
+one neural network
+multi stage neural network
+MCTS + stopping early + one neural network
+MCTS + stopping early + MSNN (multi stage neural network)
+MCTS
+minimax + stopping early + one neural network <- same tournaments (below)
+minimax + stopping early + multi stage neural network <- use tournaments to determine which network
+minimax (+alpha beta because fucking have to why not)
+
+
+tournament between NN -> generate like 10 neural networks, play against each other, pick the top % winner (if beat all of em) to iterate on, repeat
+stopping early = at move X (eg 30), instead of playing the rest of the game, use the NN to eval
+MSNN (multi stage neural network) use other neural networks (the later ones) as their value (instead of 0, 1, use the % from the late game neural network as the val)

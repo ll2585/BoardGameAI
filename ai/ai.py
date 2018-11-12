@@ -20,6 +20,7 @@ class AI:
         self.y = None
         self.model = None
         self.n_players = 2
+        self.scores = None
 
 
 
@@ -83,16 +84,24 @@ class AI:
             print('loading {filename}'.format(filename=filename))
         self.model = load_model(filename)
 
-    def train_model(self, n_epochs=30, batch_size=1000, verbose=False):
-        categorical_y = keras.utils.to_categorical(self.y, 3)
-        board_x = self.x[:,:60]
-        player_x = self.x[:,60:]
+    def train_model(self, x = None, y = None, n_epochs=30, batch_size=1000, verbose=False):
+        if y is None:
+            categorical_y = keras.utils.to_categorical(self.y, 3)
+        else:
+            categorical_y = keras.utils.to_categorical(y, 3)
+        if x is None:
+            board_x = self.x[:,:60]
+            player_x = self.x[:,60:]
+        else:
+            board_x = x[:, :60]
+            player_x = x[:, 60:]
         hist = self.model.fit([board_x, player_x], categorical_y, epochs=n_epochs, batch_size=batch_size, verbose=True,
                        validation_split=.33, shuffle=True)
         print('loss: {0}'.format(hist.history['loss'][-1]))
         print('val loss: {0}'.format(hist.history['val_loss'][-1]))
-        scores = self.model.evaluate([board_x, player_x], categorical_y, verbose=False)
-        print("\n%s: %.2f%%" % (self.model.metrics_names[1], scores[1] * 100))
+        self.scores = self.model.evaluate([board_x, player_x], categorical_y, verbose=False)
+        print("\n%s: %.2f%%" % (self.model.metrics_names[1], self.scores[1] * 100))
+
 
     def evaluate_data(self, x, y):
         categorical_y = keras.utils.to_categorical(y, 3)
@@ -100,3 +109,14 @@ class AI:
         player_x = x[:, 60:]
         scores = self.model.evaluate([board_x, player_x], categorical_y)
         return scores[1]
+
+    def filter_by_tiles_collected(self, total_tiles_collected):
+        assert self.x is not None
+        assert self.y is not None
+        np.set_printoptions(threshold=np.nan)
+        player_tiles_collected = 181
+        other_player_tiles_collected_index = 183
+        subset = self.x
+        x = subset[(subset[:, player_tiles_collected] + subset[:, other_player_tiles_collected_index]) >= total_tiles_collected]
+        y = self.y[(subset[:, player_tiles_collected] + subset[:, other_player_tiles_collected_index]) >= total_tiles_collected]
+        return x, y
