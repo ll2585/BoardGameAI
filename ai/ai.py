@@ -22,8 +22,6 @@ class AI:
         self.n_players = 2
         self.scores = None
 
-
-
     def load_data(self, x, y):
         self.x = x
         self.y = y
@@ -40,15 +38,19 @@ class AI:
         player_inputs = Input(shape=(124,))
         player_dense = Dense(124, activation='relu')(player_inputs)
         player_dense = BatchNormalization()(player_dense)
+        player_dense = Dense(200, activation='relu')(player_dense)
         player_dense = Dropout(.5)(player_dense)
 
         inputs = [board_input, player_inputs]
         ai = keras.layers.concatenate([x, player_dense])
 
         ai = Dropout(.5)(ai)
+        ai = BatchNormalization()(ai)
         ai = Dense(100,activation='relu')(ai)
-        ai = Dense(20, activation='relu')(ai)
-        ai = Dense(10, activation='relu')(ai)
+        ai = Dense(100, activation='relu')(ai)
+        ai = Dense(100, activation='relu')(ai)
+        ai = Dense(100, activation='relu')(ai)
+        ai = Dense(100, activation='relu')(ai)
         ai = BatchNormalization()(ai)
         ai = Dense(3, activation='softmax')(ai)#3 categories for draw
         model = Model(inputs = inputs, outputs = ai)
@@ -84,7 +86,7 @@ class AI:
             print('loading {filename}'.format(filename=filename))
         self.model = load_model(filename)
 
-    def train_model(self, x = None, y = None, n_epochs=30, batch_size=1000, verbose=False):
+    def train_model(self, x = None, y = None, n_epochs=50, batch_size=1000, verbose=False):
         if y is None:
             categorical_y = keras.utils.to_categorical(self.y, 3)
         else:
@@ -108,6 +110,7 @@ class AI:
         board_x = x[:, :60]
         player_x = x[:, 60:]
         scores = self.model.evaluate([board_x, player_x], categorical_y)
+        print(scores)
         return scores[1]
 
     def filter_by_tiles_collected(self, total_tiles_collected):
@@ -120,3 +123,7 @@ class AI:
         x = subset[(subset[:, player_tiles_collected] + subset[:, other_player_tiles_collected_index]) >= total_tiles_collected]
         y = self.y[(subset[:, player_tiles_collected] + subset[:, other_player_tiles_collected_index]) >= total_tiles_collected]
         return x, y
+
+    def evaluate_filter(self, total_tiles_collected):
+        x, y = self.filter_by_tiles_collected(total_tiles_collected)
+        return self.evaluate_data(x, y)

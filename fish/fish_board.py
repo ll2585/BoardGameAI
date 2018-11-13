@@ -1,6 +1,18 @@
 import random
 from .fish_move import FishMove
 
+
+def get_board_from_pieces(pieces):
+    from copy import deepcopy
+    clone = FishBoard()
+    location_dict = {}
+    new_pieces = deepcopy(pieces)
+    for i, piece in enumerate(new_pieces):
+        location_dict['{x}-{y}-{z}'.format(x=piece.x, y=piece.y, z=piece.z)] = i
+    clone.pieces = new_pieces
+    clone.location_dict = location_dict
+    return clone
+
 class FishBoard():
     def __init__(self):
         "Set up initial board configuration."
@@ -56,29 +68,38 @@ class FishBoard():
         for i in range(8):
             self.pieces.append(Hexagon(i - 4, i + 3, 7))
         values = [1] * 30 + [2] * 20 + [3] * 10
-        random.seed(212)
+        #random.seed(212)
         random.shuffle(values)
-        random.seed(None)
+        #random.seed(None)
         for i, piece in enumerate(self.pieces):
             self.location_dict['{x}-{y}-{z}'.format(x=piece.x, y=piece.y, z=piece.z)] = i
             piece.set_value(values[i])
+
+    def get_clone(self):
+        from copy import deepcopy
+        clone = FishBoard()
+        pieces = []
+        location_dict = {}
+        for p in self.pieces:
+            pieces.append(deepcopy(p))
+        for i, piece in enumerate(pieces):
+            location_dict['{x}-{y}-{z}'.format(x=piece.x, y=piece.y, z=piece.z)] = i
+        clone.pieces = pieces
+        clone.location_dict = location_dict
+        return clone
 
     # add [][] indexer syntax to the Board
     def __getitem__(self, index):
         return self.pieces[index]
 
-    def get_legal_moves(self, fish_index, player):
+    def get_legal_moves(self, fish_index, player_id):
         """Returns all the legal moves for the given player.
         """
         moves = []
         if fish_index == -1:
             return moves
         for direction in ["left", "right", "top_left", "bottom_right", "top_right", "bottom_left"]:
-            moves += self.get_moves_direction(fish_index, direction, player)
-        if len(moves) == 0:
-            # penguin cant move - can kill itself - JK
-            pass
-            #moves.append(FishMove(fish_index, fish_index, player=player))
+            moves += self.get_moves_direction(fish_index, direction, player_id)
         return moves
 
     def get_number_of_possible_moves(self):
@@ -127,7 +148,7 @@ class FishBoard():
 
         return total_moves
 
-    def get_moves_direction(self, start, direction, player):
+    def get_moves_direction(self, start, direction, player_id):
         my_hex = self.pieces[start]
         my_x = my_hex.x
         my_y = my_hex.y
@@ -165,7 +186,7 @@ class FishBoard():
 
             if hex.has_penguin_here() or hex.is_empty():
                 break
-            moves.append(FishMove(start, self.location_dict[index], player=player))
+            moves.append(FishMove(start, self.location_dict[index], player_id=player_id))
 
         return moves
 

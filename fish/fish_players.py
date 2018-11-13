@@ -92,7 +92,7 @@ class RandomPlayer(Player):
         self.extended_serialized_action_history = []
 
     def move(self, seed=None):
-        possible_moves = self.game.get_possible_moves(self)
+        possible_moves = self.game.get_possible_moves(self.player_id)
         random.seed(seed)
         move = random.choice(possible_moves)
         random.seed(None)

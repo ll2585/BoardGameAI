@@ -66,7 +66,7 @@ class FoodChainGame:
         return self.players[next_player_index]
 
     def do_move(self, action, save_history = True):
-        player_id = action.player.get_player_id()
+        player_id = action.player_id
         cur_player = self.get_current_player()
         if player_id != cur_player.get_player_id():
             raise Exception("Current Player not playing!")

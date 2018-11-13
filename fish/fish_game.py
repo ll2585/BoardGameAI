@@ -65,7 +65,7 @@ class FishGame:
         return tiles_collected
 
     def do_move(self, action, save_history = True):
-        player_id = action.player.get_player_id()
+        player_id = action.player_id
         cur_player = self.get_current_player()
         if player_id != cur_player.get_player_id():
             raise Exception("Current Player not playing!")
@@ -144,22 +144,22 @@ class FishGame:
     def get_current_player_id(self):
         return self.current_player.get_player_id()
 
-    def get_possible_moves(self, player=None):
+    def get_possible_moves(self, player_id=None):
         legal_moves = []
         if self.is_over():
             return legal_moves
-        if player:
-            if player.get_player_id() != self.get_current_player_id():
+        if player_id is not None:
+            if player_id != self.get_current_player_id():
                 return []
         cur_player = self.get_current_player()
         penguins = cur_player.get_penguins()
         if len(penguins) < 4:
             for i, hex in enumerate(self.board.pieces):
                 if not hex.has_penguin_here():
-                    legal_moves.append(FishMove(i, player=player, type="place"))
+                    legal_moves.append(FishMove(i, player_id=player_id, type="place"))
         else:
             for penguin in penguins:
-                legal_moves += self.board.get_legal_moves(penguin, player)
+                legal_moves += self.board.get_legal_moves(penguin, player_id)
         return legal_moves
 
     def get_current_player(self):

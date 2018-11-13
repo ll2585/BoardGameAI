@@ -33,7 +33,7 @@ times_written = 0
 show_game = True
 game = FishGame()
 player_1 = RandomPlayer(0,"BOB",game)
-player_2 = NaiveAIPlayer(1,"CHARLA",game,main_name='seeded_last_25', index=0, filtered_moves=20)
+player_2 = NaiveAIPlayer(1,"CHARLA",game,main_name='minimax_50', index=0, filtered_moves=50)
 for i in tqdm(range(num_games)):
     game.set_up()
     players = [player_1, player_2]
@@ -41,14 +41,16 @@ for i in tqdm(range(num_games)):
         player.reset()
         game.add_player(player)
     game.start()
-
+    turns = 0
     while not game.is_over():
+        turns += 1
         if show_game:
             print('---------------------------------------------------------------------')
+            print('turn: {0}'.format(turns))
             display(game)
         cur_player = game.get_current_player()
-        if cur_player.get_player_id() == 0:
-            move = cur_player.move(seed=212)
+        if cur_player.get_player_id() == 1:
+            move = cur_player.get_move_by_total_moves(turns)
         else:
             move = cur_player.move()
         game.do_move(move)
@@ -67,24 +69,9 @@ for i in tqdm(range(num_games)):
     this_x = game.get_full_game_history_for_neural_net()[0]
     this_y = game.get_full_game_history_for_neural_net()[1]
 
-
-    board_x = this_x[:, :60]
-    player_x = this_x[:, 60:]
-    categorical_y = keras.utils.to_categorical(this_y, 3)
-
-    scores = player_2.ai.model.evaluate([board_x, player_x], categorical_y, verbose = False)
-    print("\n%s: %.2f%%" % (player_2.ai.model.metrics_names[1], scores[1] * 100))
+    player_2.ai.load_data(this_x, this_y)
     print("winner: {0}".format(winner))
     print(wins)
-
-    if (write_score_threshold is not None and scores[1] < write_score_threshold) or write_score_threshold is None:
-        times_written += 1
-        if x is None:
-            x = this_x
-            y = this_y
-        else:
-            x = np.concatenate((x, this_x), axis=0)
-            y = np.concatenate((y, this_y), axis=0)
 
 
 print(wins)

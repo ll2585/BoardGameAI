@@ -28,6 +28,7 @@ class NaiveAIPlayer(Player):
             self.ai.load_model(main_name, index=index)
         else:
             self.ai.create_model()
+        self.last_model_loaded = None
         self.filtered_moves = filtered_moves
 
     def get_model_move(self, possible_moves):
@@ -51,15 +52,40 @@ class NaiveAIPlayer(Player):
             else:
                 new_states = np.concatenate((new_states, new_state), axis=0)
         predictions = self.ai.make_prediction(new_states)
+        print(predictions)
         choice_index = choose_from_probs(predictions)
         return possible_moves[choice_index]
 
     def get_random_move(self, possible_moves):
         return random.choice(possible_moves)
 
+    def get_move_by_total_moves(self, total_moves):
+        possible_moves = self.game.get_possible_moves(self.player_id)
+        if total_moves < 50:
+            move = self.get_random_move(possible_moves)
+        else:
+            if total_moves < 40:
+                model_name = 'minimax_38_to_40'
+            elif total_moves < 42:
+                model_name = 'minimax_40_to_42'
+            elif total_moves < 44:
+                model_name = 'minimax_42_to_44'
+            elif total_moves < 47:
+                model_name = 'minimax_44_to_47'
+            elif total_moves < 50:
+                model_name = 'minimax_47_to_50'
+            else:
+                model_name = 'minimax_50'
+            if self.last_model_loaded != model_name:
+                self.ai.load_model(model_name, index=0)
+                self.last_model_loaded = model_name
+            move = self.get_model_move(possible_moves)
+        return move
+
     def move(self):
-        possible_moves = self.game.get_possible_moves(self)
+        possible_moves = self.game.get_possible_moves(self.player_id)
         if self.filtered_moves is not None:
+            print(self.game.get_moves_played())
             if (self.game.get_moves_played()-1) >= self.filtered_moves: # -1 because the next state is equal to the
                 # filtered moves...also should be tiles collected but whatevr
                 move = self.get_model_move(possible_moves)
@@ -72,7 +98,7 @@ class NaiveAIPlayer(Player):
 
 
     def state_from_move(self, action):
-        player_id = action.player.get_player_id()
+        player_id = action.player_id
         player_who_moved = player_id
         new_board = deepcopy(self.game.board)
         new_player_index = None
