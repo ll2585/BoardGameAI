@@ -68,7 +68,7 @@ class FishBoard():
         for i in range(8):
             self.pieces.append(Hexagon(i - 4, i + 3, 7))
         values = [1] * 30 + [2] * 20 + [3] * 10
-        #random.seed(212)
+        random.seed(212)
         random.shuffle(values)
         #random.seed(None)
         for i, piece in enumerate(self.pieces):
@@ -279,3 +279,15 @@ class Hexagon:
             'z': self.z,
             'value': self.value
         })
+
+def get_all_actions(player_id=None):
+    b = FishBoard()
+    pieces = b.pieces
+    moves = []
+    for i in range(len(pieces)):
+        for direction in ["left", "right", "top_left", "bottom_right", "top_right", "bottom_left"]:
+            moves += (b.get_moves_direction(i, direction, player_id))
+
+    for i, hex in enumerate(pieces):
+        moves.append(FishMove(i, player_id=player_id, type="place"))
+    return moves

@@ -15,17 +15,16 @@ class FishState:
         player_who_moved = self.player_who_moved
         player_ids = self.player_ids
 
-        if player_who_moved == player_ids[0]:
-            player_1 = self.players[0]
-            player_2 = self.players[1]
-        else:
-            assert player_who_moved == player_ids[1]
-            player_1 = self.players[1]
-            player_2 = self.players[0]
+        player_1 = self.players[0]
+        player_2 = self.players[1]
 
         player_1_penguins = player_1[0]
         player_2_penguins = player_2[0]
 
+        if self.current_player_id == player_ids[0]:
+            cur_player = 0
+        else:
+            cur_player = 1
 
 
         #from player who moved's perspective
@@ -51,6 +50,7 @@ class FishState:
         serialization.extend(board_penguins)
         serialization.extend(player_1_serialization)
         serialization.extend(player_2_serialization)
+        serialization.append(cur_player)
 
         serialization = np.asarray(serialization)
 
@@ -58,6 +58,7 @@ class FishState:
             'serialization': serialization,
             'player_who_moved': player_who_moved
         }
+
 
     def get_state_from_move(self, action):
         #print("ACTION", action)
@@ -235,3 +236,53 @@ def display_state(state):
     rows.extend(["Player 0: points/tiles: {0}/{1}".format(state.players[0][1], state.players[0][2])])
     rows.extend(["Player 1: points/tiles: {0}/{1}".format(state.players[1][1], state.players[1][2])])
     print ('\n'.join(rows))
+
+def get_state_from_serialization(serialization):
+    from fish.fish_board import FishBoard
+    player_1_id = 0 #?!
+    player_2_id = 1 #?!
+
+    board = FishBoard().pieces
+
+    player_who_moved = -1 #because this doesnt matter i guess for this case
+    player_ids = [player_1_id, player_2_id]
+
+    serialization = serialization.tolist()
+    board_points = serialization[:60]
+    board_penguins = serialization[60:180]
+    player_1_serialization = serialization[180:182]
+    player_2_serialization = serialization[182:184]
+    cur_player = serialization[184]
+
+    player_1 = []
+    player_2 = []
+    player_1_penguins = []
+    player_2_penguins = []
+
+    for i, value in enumerate(board_points):
+        if board_penguins[2*i] == 1:
+            player_1_penguins.append(i)
+            board[i].move_penguin_here()
+        if board_penguins[2*i+1] == 1:
+            player_2_penguins.append(i)
+            board[i].move_penguin_here()
+        if value == 0:
+            board[i].value = -1
+        else:
+            board[i].value = value
+
+    player_1.append(player_1_penguins)
+    player_2.append(player_2_penguins)
+
+    player_1.extend(player_1_serialization)
+    player_2.extend(player_2_serialization)
+    players = [player_1, player_2]
+
+    if cur_player == player_ids[0]:
+        current_player_id = 0
+    else:
+        current_player_id = 1
+
+    new_state = FishState(board, players, current_player_id, player_who_moved, player_ids)
+
+    return new_state

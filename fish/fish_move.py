@@ -12,3 +12,7 @@ class FishMove:
             return '{1} PLACE at {0}'.format(self.start, self.player_id)
         else:
             raise Exception("WRONG MOVE TYPE")
+
+    def get_hash(self):
+        type = '0' if self.type == 'move' else '1'
+        return '{0}.{1}.{2}.{3}'.format(type, self.start, self.end, self.player_id)

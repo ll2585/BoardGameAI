@@ -91,7 +91,7 @@ class FishGame:
                 next_player = cur_player
             while self.no_penguin_moves(next_player):
                 self.remove_penguins(next_player)
-                next_player = cur_player
+                next_player = self.get_next_player(next_player.get_player_id())
                 if self.is_over():
                     break
         elif action.type == "place":
@@ -260,3 +260,43 @@ def display(game):
                 rows[j] += str(value) + "  "
                 break
     print ('\n'.join(rows))
+
+def get_moves_from_state(state):
+    game = FishGame()
+    board = FishBoard()
+    player_1 = Player(state.player_ids[0], 'who gives a crap about the name', game)
+    player_2 = Player(state.player_ids[1], 'who gives a crap about the name', game)
+
+    player_1.penguins = state.players[0][0]
+    player_1.score = state.players[0][1]
+    player_1.tiles_collected = state.players[0][2]
+    player_2.penguins = state.players[1][0]
+    player_2.score = state.players[1][1]
+    player_2.tiles_collected = state.players[1][2]
+
+    game.players = [player_1, player_2]
+    board.pieces = state.board
+    cur_player = state.current_player_id
+    game.current_player = player_1 if cur_player == player_1.get_player_id() else player_2
+    game.board = board
+    return game.get_possible_moves(cur_player)
+
+def get_random_move_from_state(state, seed=123):
+    #returns index of all moves
+    from fish.fish_state import get_state_from_serialization
+    from fish.fish_board import get_all_actions
+    real_state = get_state_from_serialization(state[0])
+    real_moves = get_moves_from_state(real_state)
+    player_id = real_state.current_player_id
+    move_map = get_all_actions(player_id)
+    hashed_move_map = [move.get_hash() for move in move_map]
+    hashed_real_moves = [move.get_hash() for move in real_moves]
+    valid_moves = []
+    for i, move in enumerate(hashed_move_map):
+        if move in hashed_real_moves:
+            valid_moves.append(i)
+    import random
+    random.seed(seed)
+    move = random.choice(valid_moves)
+    print("THE MOVE IS ", move)
+    return move
